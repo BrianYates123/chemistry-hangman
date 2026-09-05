@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<title>Chemistry Hangman — 118 Elements</title>
+
+<style>
+:root{
+  --bg:#07111f;
+  --panel:#101d31;
+  --panel2:#152640;
+  --text:#eef6ff;
+  --muted:#a9bbcf;
+  --accent:#39d98a;
+  --accent2:#5ab0ff;
+  --danger:#ff5d73;
+  --gold:#ffd166;
+  --line:#29415e;
+  --key:#203552;
+  --keytext:#fff;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#123052 0,#07111f 52%,#050b13 100%);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  min-height:100vh
+}
+
+button{font:inherit}
+
+.app{width:min(1100px,100%);margin:auto;padding:18px 14px 30px}
+
+header{text-align:center;margin-bottom:14px}
+
+h1{margin:4px 0;font-size:clamp(1.65rem,5vw,2.6rem)}
+
+.subtitle{color:var(--muted);margin:0}
+
+.panel{background:rgba(16,29,49,.94);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 12px 35px #0005}
+
+#startScreen{text-align:center}
+.diff-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
+.diff{padding:14px 8px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--text);cursor:pointer}
+.diff:hover,
+.diff.selected{border-color:var(--accent);box-shadow:0 0 0 2px #39d98a33}
+.diff strong{display:block;font-size:1.05rem}.diff span{display:block;color:var(--muted);font-size:.8rem;margin-top:4px}
+.primary{background:linear-gradient(135deg,var(--accent),#21a8b9);color:#04110b;border:0;border-radius:12px;padding:12px 20px;font-weight:800;cursor:pointer}
+.hidden{display:none!important}
+.topbar{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;margin-bottom:12px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;text-align:center}
+.stat small{display:block;color:var(--muted);font-size:.72rem}.stat b{font-size:1.15rem}
+.gamegrid{display:grid;grid-template-columns:minmax(270px,420px) 1fr;gap:14px}
+.figurebox{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:410px}
+svg{width:min(100%,370px);height:auto}
+.svgpart{
+  stroke:#dcecff;
+  stroke-width:7;
+  stroke-linecap:round;
+  fill:none;
+  opacity:0;
+  transition:opacity .2s
+}
+.svgpart.show{opacity:1}
+
+.scientist-head{fill:none;stroke:#dcecff;stroke-width:7;opacity:0}
+.scientist-head.show{opacity:1}
+.scientist-body{fill:"#EEF4FF";stroke:#dcecff;stroke-width:7;opacity:0}
+.scientist-body.show{opacity:1}
+
+.clue{text-align:center;margin:4px 0 12px}
+.word{letter-spacing:.22em;font-size:clamp(1.5rem,6vw,2.5rem);font-weight:800;word-break:break-word}
+.hint{min-height:28px;color:var(--gold);font-weight:700;margin-top:8px}
+.info{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;color:var(--muted);font-size:.88rem}
+.badge{background:#1b2d47;border:1px solid var(--line);padding:5px 9px;border-radius:999px}
+.keyboard{display:grid;grid-template-columns:repeat(9,1fr);gap:7px;margin-top:14px}
+.key{min-height:45px;border:1px solid #36516f;border-radius:9px;background:var(--key);color:var(--keytext);font-weight:800;cursor:pointer}
+.key:disabled{opacity:.32;cursor:not-allowed}.key.correct{background:#137d52;border-color:#35e09a}.key.wrong{background:#7d2335;border-color:#ff667c}
+.message{min-height:28px;text-align:center;font-weight:700;margin:8px 0}.good{color:var(--accent)}.bad{color:var(--danger)}
+.challenge{text-align:center}.challenge h2{margin:4px 0 8px}.challenge input{width:min(360px,100%);padding:12px;border-radius:10px;border:1px solid var(--line);background:#091524;color:white;font-size:1.05rem;text-align:center}
+.choice-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:12px auto;max-width:700px}
+.choice{padding:9px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:white;cursor:pointer}
+.choice:hover{border-color:var(--accent2)}
+.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;text-align:left;margin:14px auto;max-width:650px}
+.summary div{padding:9px 11px;background:#0b1728;border:1px solid var(--line);border-radius:10px}
+.summary span{display:block;color:var(--muted);font-size:.75rem}.summary b{display:block;margin-top:2px}
+.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.secondary{background:#203552;color:white;border:1px solid #3a5776;border-radius:11px;padding:11px 16px;cursor:pointer}
+footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:14px}
+@media(max-width:760px){
+ .diff-grid{grid-template-columns:repeat(2,1fr)}
+ .topbar{grid-template-columns:1fr 1fr 1fr 1fr}.topbar .stat{padding:6px 4px}
+ .gamegrid{grid-template-columns:1fr}
+ .figurebox{min-height:300px}.keyboard{grid-template-columns:repeat(7,1fr);gap:6px}.key{min-height:43px}
+}
+@media(max-width:430px){
+ .app{padding:10px 9px 22px}.panel{padding:12px;border-radius:15px}
+ .topbar{grid-template-columns:repeat(4,1fr)}.stat small{font-size:.62rem}.stat b{font-size:1rem}
+ .keyboard{grid-template-columns:repeat(6,1fr)}.key{min-height:42px}
+ .summary{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+
+<body>
+<div class="app">
+<header><h1>⚗️ Chemistry Hangman</h1><p class="subtitle">All 118 chemical elements • Guess the element, then prove your chemistry knowledge!</p></header>
+
+<section id="startScreen" class="panel">
+  <h2>Choose your difficulty</h2>
+  <div class="diff-grid">
+    <button class="diff selected" data-diff="easy"><strong>Easy</strong><span>Very well-known elements</span></button>
+    <button class="diff" data-diff="normal"><strong>Normal</strong><span>Common + familiar elements</span></button>
+    <button class="diff" data-diff="hard"><strong>Hard</strong><span>Less familiar elements</span></button>
+    <button class="diff" data-diff="expert"><strong>Expert</strong><span>Any of the 118</span></button>
+  </div>
+  <p class="subtitle">Hints appear after 2, 4 and 5 mistakes. A round is timed from the first guess to the solution.</p>
+  <button id="startBtn" class="primary">Start Game</button>
+</section>
+
+<section id="gameScreen" class="hidden">
+ <div class="topbar">
+   <div class="stat"><small>Difficulty</small><b id="difficultyLabel">Easy</b></div>
+   <div class="stat"><small>Score</small><b id="score">0</b></div>
+   <div class="stat"><small>Round</small><b id="round">1</b></div>
+   <div class="stat"><small>Time</small><b id="timer">0:00</b></div>
+ </div>
+
+ <div id="playPanel" class="panel">
+  <div class="gamegrid">
+   <div class="panel figurebox">
+    <svg viewBox="0 0 300 390" aria-label="10-stage scientist hangman">
+      <!-- 1 Base -->
+      <path id="p1" class="svgpart" d="M35 360 H265"/>
+      <!-- 2 Pole -->
+      <path id="p2" class="svgpart" d="M70 360 V45"/>
+      <!-- 3 Beam -->
+      <path id="p3" class="svgpart" d="M70 45 H205"/>
+      <!-- 4 Rope -->
+      <path id="p4" class="svgpart" d="M205 45 V82"/>
+      <!-- 5 Head -->
+
+<g id="p5" class="scientist-head" stroke="#1E3A8A" stroke-linecap: "round">
+  <!-- 1. The Main Head Base with a warm cream/yellow fill -->
+  <circle cx="205" cy="112" r="30" fill="#FFF8E1" stroke="none"/>
+  <!-- 2. Hair (Back Layer) -->
+  <!-- A sleek, stylized block of hair that hugs the top of the head -->
+  <path d="M176 102 C180 82, 230 82, 234 102 C225 90, 185 90, 176 102 Z" fill="#1E3A8A" stroke="none"/>
+  <!-- 3. The Glasses/Eyes -->
+  <circle cx="195" cy="107" r="6" fill="none" stroke="#1E3A8A" stroke-width="2"/>
+  <circle cx="215" cy="107" r="6" fill="none" stroke="#1E3A8A" stroke-width="2"/>
+  <line x1="201" y1="107" x2="209" y2="107" stroke="#1E3A8A" stroke-width="2"/>
+  <!-- 4. Hair Tuft (Front Layer) -->
+  <!-- A small, classic "mad scientist" stray tuft pointing upward -->
+  <path d="M200 85 Q205 70 212 75 Q207 82 205 85" fill="none" stroke="#1E3A8A" stroke-width="2.5"/>
+  <!-- 5. The Smiling Mouth -->
+  <!-- 5. The Frowning Mouth -->
+  <!-- A smooth curve that arcs upward in the middle, creating a sad/serious look -->
+  <path d="M198 129 Q205 122 212 129" fill="none" stroke="#1E3A8A" stroke-width="2"/>
+</g>
+
+      <!-- 6 Body -->
+      <path id="p6" class="scientist-body" d="M185 145 L225 145 L240 240 L170 240 Z" fill="#8CA8D8"/>
+      <!-- 7 Left arm -->
+      <path id="p7" class="svgpart" d="M180 165 L130 205"/>
+      <!-- 8 Right arm -->
+      <path id="p8" class="svgpart" d="M230 165 L280 205"/>
+      <!-- 9 Left leg -->
+      <path id="p9" class="svgpart" d="M195 240 L160 315"/>
+      <!-- 10 Right leg -->
+      <path id="p10" class="svgpart" d="M215 240 L250 315"/>
+    </svg>
+    <div class="info">
+      <span class="badge">Mistakes: <b id="mistakes">0</b>/10</span>
+      <span class="badge">Letters: <b id="remaining">—</b></span>
+    </div>
+   </div>
+
+   <div>
+    <div class="clue">
+      <div id="word" class="word"></div>
+      <div id="hint" class="hint"></div>
+    </div>
+    <div id="message" class="message"></div>
+    <div id="keyboard" class="keyboard" aria-label="On-screen keyboard"></div>
+   </div>
+  </div>
+ </div>
+
+ <div id="challengePanel" class="panel hidden">
+   <div id="challenge" class="challenge"></div>
+ </div>
+</section>
+
+<footer>Works with a physical keyboard or the on-screen keyboard. Letter case does not matter.</footer>
+</div>
+
+<script>
+const elements = [
+["Hydrogen","H",1,"Nonmetal",1,1.008,"Gas","1"],["Helium","He",2,"Noble gas",18,4.003,"Gas","1"],
+["Lithium","Li",3,"Alkali metal",1,6.94,"Solid","2"],["Beryllium","Be",4,"Alkaline earth metal",2,9.012,"Solid","2"],
+["Boron","B",5,"Metalloid",13,10.81,"Solid","2"],["Carbon","C",6,"Nonmetal",14,12.011,"Solid","2"],
+["Nitrogen","N",7,"Nonmetal",15,14.007,"Gas","2"],["Oxygen","O",8,"Nonmetal",16,15.999,"Gas","2"],
+["Fluorine","F",9,"Halogen",17,18.998,"Gas","2"],["Neon","Ne",10,"Noble gas",18,20.180,"Gas","2"],
+["Sodium","Na",11,"Alkali metal",1,22.990,"Solid","3"],["Magnesium","Mg",12,"Alkaline earth metal",2,24.305,"Solid","3"],
+["Aluminium","Al",13,"Post-transition metal",13,26.982,"Solid","3"],["Silicon","Si",14,"Metalloid",14,28.085,"Solid","3"],
+["Phosphorus","P",15,"Nonmetal",15,30.974,"Solid","3"],["Sulfur","S",16,"Nonmetal",16,32.06,"Solid","3"],
+["Chlorine","Cl",17,"Halogen",17,35.45,"Gas","3"],["Argon","Ar",18,"Noble gas",18,39.948,"Gas","3"],
+["Potassium","K",19,"Alkali metal",1,39.098,"Solid","4"],["Calcium","Ca",20,"Alkaline earth metal",2,40.078,"Solid","4"],
+["Scandium","Sc",21,"Transition metal",3,44.956,"Solid","4"],["Titanium","Ti",22,"Transition metal",4,47.867,"Solid","4"],
+["Vanadium","V",23,"Transition metal",5,50.942,"Solid","4"],["Chromium","Cr",24,"Transition metal",6,51.996,"Solid","4"],
+["Manganese","Mn",25,"Transition metal",7,54.938,"Solid","4"],["Iron","Fe",26,"Transition metal",8,55.845,"Solid","4"],
+["Cobalt","Co",27,"Transition metal",9,58.933,"Solid","4"],["Nickel","Ni",28,"Transition metal",10,58.693,"Solid","4"],
+["Copper","Cu",29,"Transition metal",11,63.546,"Solid","4"],["Zinc","Zn",30,"Transition metal",12,65.38,"Solid","4"],
+["Gallium","Ga",31,"Post-transition metal",13,69.723,"Solid","4"],["Germanium","Ge",32,"Metalloid",14,72.630,"Solid","4"],
+["Arsenic","As",33,"Metalloid",15,74.922,"Solid","4"],["Selenium","Se",34,"Nonmetal",16,78.971,"Solid","4"],
+["Bromine","Br",35,"Halogen",17,79.904,"Liquid","4"],["Krypton","Kr",36,"Noble gas",18,83.798,"Gas","4"],
+["Rubidium","Rb",37,"Alkali metal",1,85.468,"Solid","5"],["Strontium","Sr",38,"Alkaline earth metal",2,87.62,"Solid","5"],
+["Yttrium","Y",39,"Transition metal",3,88.906,"Solid","5"],["Zirconium","Zr",40,"Transition metal",4,91.224,"Solid","5"],
+["Niobium","Nb",41,"Transition metal",5,92.906,"Solid","5"],["Molybdenum","Mo",42,"Transition metal",6,95.95,"Solid","5"],
+["Technetium","Tc",43,"Transition metal",7,98,"Solid","5"],["Ruthenium","Ru",44,"Transition metal",8,101.07,"Solid","5"],
+["Rhodium","Rh",45,"Transition metal",9,102.906,"Solid","5"],["Palladium","Pd",46,"Transition metal",10,106.42,"Solid","5"],
+["Silver","Ag",47,"Transition metal",11,107.868,"Solid","5"],["Cadmium","Cd",48,"Transition metal",12,112.414,"Solid","5"],
+["Indium","In",49,"Post-transition metal",13,114.818,"Solid","5"],["Tin","Sn",50,"Post-transition metal",14,118.710,"Solid","5"],
+["Antimony","Sb",51,"Metalloid",15,121.760,"Solid","5"],["Tellurium","Te",52,"Metalloid",16,127.60,"Solid","5"],
+["Iodine","I",53,"Halogen",17,126.904,"Solid","5"],["Xenon","Xe",54,"Noble gas",18,131.293,"Gas","5"],
+["Caesium","Cs",55,"Alkali metal",1,132.905,"Solid","6"],["Barium","Ba",56,"Alkaline earth metal",2,137.327,"Solid","6"],
+["Lanthanum","La",57,"Lanthanide",3,138.905,"Solid","6"],["Cerium","Ce",58,"Lanthanide",null,140.116,"Solid","6"],
+["Praseodymium","Pr",59,"Lanthanide",null,140.908,"Solid","6"],["Neodymium","Nd",60,"Lanthanide",null,144.242,"Solid","6"],
+["Promethium","Pm",61,"Lanthanide",null,145,"Solid","6"],["Samarium","Sm",62,"Lanthanide",null,150.36,"Solid","6"],
+["Europium","Eu",63,"Lanthanide",null,151.964,"Solid","6"],["Gadolinium","Gd",64,"Lanthanide",null,157.25,"Solid","6"],
+["Terbium","Tb",65,"Lanthanide",null,158.925,"Solid","6"],["Dysprosium","Dy",66,"Lanthanide",null,162.500,"Solid","6"],
+["Holmium","Ho",67,"Lanthanide",null,164.930,"Solid","6"],["Erbium","Er",68,"Lanthanide",null,167.259,"Solid","6"],
+["Thulium","Tm",69,"Lanthanide",null,168.934,"Solid","6"],["Ytterbium","Yb",70,"Lanthanide",null,173.045,"Solid","6"],
+["Lutetium","Lu",71,"Lanthanide",null,174.967,"Solid","6"],["Hafnium","Hf",72,"Transition metal",4,178.49,"Solid","6"],
+["Tantalum","Ta",73,"Transition metal",5,180.948,"Solid","6"],["Tungsten","W",74,"Transition metal",6,183.84,"Solid","6"],
+["Rhenium","Re",75,"Transition metal",7,186.207,"Solid","6"],["Osmium","Os",76,"Transition metal",8,190.23,"Solid","6"],
+["Iridium","Ir",77,"Transition metal",9,192.217,"Solid","6"],["Platinum","Pt",78,"Transition metal",10,195.084,"Solid","6"],
+["Gold","Au",79,"Transition metal",11,196.967,"Solid","6"],["Mercury","Hg",80,"Transition metal",12,200.592,"Liquid","6"],
+["Thallium","Tl",81,"Post-transition metal",13,204.38,"Solid","6"],["Lead","Pb",82,"Post-transition metal",14,207.2,"Solid","6"],
+["Bismuth","Bi",83,"Post-transition metal",15,208.980,"Solid","6"],["Polonium","Po",84,"Post-transition metal",16,209,"Solid","6"],
+["Astatine","At",85,"Halogen",17,210,"Solid","6"],["Radon","Rn",86,"Noble gas",18,222,"Gas","6"],
+["Francium","Fr",87,"Alkali metal",1,223,"Solid","7"],["Radium","Ra",88,"Alkaline earth metal",2,226,"Solid","7"],
+["Actinium","Ac",89,"Actinide",3,227,"Solid","7"],["Thorium","Th",90,"Actinide",null,232.038,"Solid","7"],
+["Protactinium","Pa",91,"Actinide",null,231.036,"Solid","7"],["Uranium","U",92,"Actinide",null,238.029,"Solid","7"],
+["Neptunium","Np",93,"Actinide",null,237,"Solid","7"],["Plutonium","Pu",94,"Actinide",null,244,"Solid","7"],
+["Americium","Am",95,"Actinide",null,243,"Solid","7"],["Curium","Cm",96,"Actinide",null,247,"Solid","7"],
+["Berkelium","Bk",97,"Actinide",null,247,"Solid","7"],["Californium","Cf",98,"Actinide",null,251,"Solid","7"],
+["Einsteinium","Es",99,"Actinide",null,252,"Solid","7"],["Fermium","Fm",100,"Actinide",null,257,"Solid","7"],
+["Mendelevium","Md",101,"Actinide",null,258,"Solid","7"],["Nobelium","No",102,"Actinide",null,259,"Solid","7"],
+["Lawrencium","Lr",103,"Actinide",null,266,"Solid","7"],["Rutherfordium","Rf",104,"Transition metal",4,267,"Solid","7"],
+["Dubnium","Db",105,"Transition metal",5,268,"Solid","7"],["Seaborgium","Sg",106,"Transition metal",6,269,"Solid","7"],
+["Bohrium","Bh",107,"Transition metal",7,270,"Solid","7"],["Hassium","Hs",108,"Transition metal",8,277,"Solid","7"],
+["Meitnerium","Mt",109,"Transition metal",9,278,"Solid","7"],["Darmstadtium","Ds",110,"Transition metal",10,281,"Solid","7"],
+["Roentgenium","Rg",111,"Transition metal",11,282,"Solid","7"],["Copernicium","Cn",112,"Transition metal",12,285,"Solid","7"],
+["Nihonium","Nh",113,"Post-transition metal",13,286,"Solid","7"],["Flerovium","Fl",114,"Post-transition metal",14,289,"Solid","7"],
+["Moscovium","Mc",115,"Post-transition metal",15,290,"Solid","7"],["Livermorium","Lv",116,"Post-transition metal",16,293,"Solid","7"],
+["Tennessine","Ts",117,"Halogen",17,294,"Solid","7"],["Oganesson","Og",118,"Noble gas",18,294,"Gas","7"]
+].map(e=>({name:e[0],symbol:e[1],number:e[2],category:e[3],group:e[4],mass:e[5],phase:e[6],period:e[7]}));
+
+const easyNames = new Set(["Hydrogen","Helium","Carbon","Nitrogen","Oxygen","Fluorine","Neon","Sodium","Magnesium","Aluminium","Silicon","Phosphorus","Sulfur","Chlorine","Argon","Potassium","Calcium","Iron","Copper","Zinc","Silver","Tin","Iodine","Xenon","Gold","Mercury","Lead","Uranium","Platinum"]);
+const hardNames = new Set(["Scandium","Vanadium","Chromium","Manganese","Cobalt","Nickel","Gallium","Germanium","Arsenic","Selenium","Bromine","Krypton","Rubidium","Strontium","Yttrium","Zirconium","Niobium","Molybdenum","Technetium","Ruthenium","Rhodium","Palladium","Cadmium","Indium","Antimony","Tellurium","Caesium","Barium","Lanthanum","Cerium","Praseodymium","Neodymium","Samarium","Europium","Gadolinium","Dysprosium","Erbium","Hafnium","Tantalum","Tungsten","Rhenium","Osmium","Iridium","Thallium","Bismuth","Polonium","Astatine","Radon","Radium","Actinium","Thorium","Protactinium","Neptunium","Plutonium","Americium","Curium"]);
+const categories = ["Alkali metal","Alkaline earth metal","Transition metal","Post-transition metal","Metalloid","Nonmetal","Halogen","Noble gas","Lanthanide","Actinide"];
+
+let difficulty="easy", score=0, round=0, current=null, guessed=new Set(), mistakes=0, startTime=0, timerId=null, solved=false;
+
+const $=id=>document.getElementById(id);
+document.querySelectorAll(".diff").forEach(b=>b.onclick=()=>{document.querySelectorAll(".diff").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");difficulty=b.dataset.diff;});
+$("startBtn").onclick=()=>{score=0;round=0;$("startScreen").classList.add("hidden");$("gameScreen").classList.remove("hidden");newRound();};
+
+function pool(){
+ if(difficulty==="easy") return elements.filter(e=>easyNames.has(e.name));
+ if(difficulty==="normal") return elements.filter(e=>!hardNames.has(e.name) && !["Technetium","Promethium","Astatine","Francium","Radium"].includes(e.name));
+ if(difficulty==="hard") return elements.filter(e=>hardNames.has(e.name)||e.number>=57);
+ return elements;
+}
+function newRound(){
+ round++; guessed=new Set(); mistakes=0; solved=false;
+ const p=pool(); current=p[Math.floor(Math.random()*p.length)];
+ startTime=Date.now(); clearInterval(timerId); timerId=setInterval(updateTimer,250);
+ $("difficultyLabel").textContent=difficulty[0].toUpperCase()+difficulty.slice(1);
+ $("round").textContent=round;$("mistakes").textContent=0;$("hint").textContent="";$("message").textContent="";
+ $("challengePanel").classList.add("hidden");$("playPanel").classList.remove("hidden");
+ for(let i=1;i<=10;i++) $("p"+i).classList.remove("show");
+ renderWord();renderKeyboard();
+}
+function updateTimer(){const s=Math.floor((Date.now()-startTime)/1000);$("timer").textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;}
+function renderWord(){
+ $("word").textContent=current.name.split("").map(ch=>guessed.has(ch.toUpperCase())?ch:"_").join(" ");
+ $("remaining").textContent=current.name.toUpperCase().split("").filter(c=>/[A-Z]/.test(c)&&!guessed.has(c)).length;
+}
+function renderKeyboard(){
+ const kb=$("keyboard");kb.innerHTML="";
+ "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(l=>{
+   const b=document.createElement("button");b.className="key";b.textContent=l;b.disabled=guessed.has(l);
+   if(guessed.has(l)) b.classList.add(current.name.toUpperCase().includes(l)?"correct":"wrong");
+   b.onclick=()=>guess(l);kb.appendChild(b);
+ });
+}
+function guess(letter){
+ if(solved||guessed.has(letter))return;
+ guessed.add(letter);
+ if(!current.name.toUpperCase().includes(letter)){
+  mistakes++;
+  $("mistakes").textContent=mistakes;
+  const stage = $("p"+mistakes);
+  if(stage) stage.classList.add("show");
+  showHint();
+}
+ else {$("message").className="message good";$("message").textContent="Good guess!";}
+ renderWord();renderKeyboard();
+ if(mistakes>=10){finish(false);return}
+ const letters=[...current.name.toUpperCase()].filter(c=>/[A-Z]/.test(c));
+ if(letters.every(c=>guessed.has(c))) finish(true);
+}
+function showHint(){
+ if(mistakes===2)$("hint").textContent="Hint: Category — "+current.category;
+ if(mistakes===4)$("hint").textContent="Hint: Atomic number — "+current.number;
+ if(mistakes===5)$("hint").textContent="Hint: First letter — "+current.name[0];
+}
+function finish(win){
+ solved=true;clearInterval(timerId);const seconds=Math.floor((Date.now()-startTime)/1000);
+ if(win){
+   const bonus=Math.max(10,100-mistakes*7-Math.floor(seconds/5)*2);
+   score+=bonus;$("score").textContent=score;
+   const congrats=["Brilliant!","Excellent chemistry!","Well done, chemist!","Atomic achievement!","You nailed it!","Periodic-table perfection!","Fantastic work!"];
+   $("message").className="message good";$("message").textContent=congrats[Math.floor(Math.random()*congrats.length)]+` +${bonus} points`;
+   setTimeout(()=>symbolChallenge(seconds),2000);
+ }else{
+   $("message").className="message bad";$("message").textContent=`Out of attempts! The element was ${current.name}.`;
+   setTimeout(()=>symbolChallenge(seconds),2000);
+ }
+}
+function symbolChallenge(seconds){
+ $("playPanel").classList.add("hidden");$("challengePanel").classList.remove("hidden");
+ $("challenge").innerHTML=`
+  <h2>${current.name} — symbol challenge</h2>
+  <p>You spent <strong>${formatSeconds(seconds)}</strong> guessing this word.</p>
+  <p>What is the chemical symbol for ${current.name}?</p>
+  <input id="symbolInput" autocomplete="off" autocapitalize="characters" maxlength="3" placeholder="e.g. Fe">
+  <div class="actions"><button class="primary" id="symbolBtn">Check Symbol</button></div>
+  <div id="symbolFeedback" class="message"></div>`;
+ $("symbolBtn").onclick=checkSymbol;
+ $("symbolInput").addEventListener("keydown",e=>{if(e.key==="Enter")checkSymbol()});
+ $("symbolInput").focus();
+}
+function checkSymbol(){
+ const val=$("symbolInput").value.trim();
+ const f=$("symbolFeedback");
+ if(val.toLowerCase()===current.symbol.toLowerCase()){
+   f.className="message good";f.textContent="✓ Correct symbol! +10 points";
+   score+=10;$("score").textContent=score;
+   setTimeout(categoryChallenge,2000);
+ }else{f.className="message bad";f.textContent=`✗ Not quite. The correct symbol is ${current.symbol}.`;setTimeout(categoryChallenge,2000);}
+}
+function categoryChallenge(){
+ $("challenge").innerHTML=`
+ <h2>One more chemistry challenge</h2>
+ <p>What category does <strong>${current.name}</strong> belong to?</p>
+ <div class="choice-grid">${categories.map(c=>`<button class="choice" data-cat="${c}">${c}</button>`).join("")}</div>
+ <div id="catFeedback" class="message"></div>`;
+ document.querySelectorAll(".choice").forEach(b=>b.onclick=()=>checkCategory(b.dataset.cat));
+}
+function checkCategory(cat){
+ const f=$("catFeedback");
+ document.querySelectorAll(".choice").forEach(b=>b.disabled=true);
+ if(cat===current.category){score+=15;$("score").textContent=score;f.className="message good";f.textContent="🎉 Excellent! Category correct — +15 points";setTimeout(()=>showSummary(true),2000);}
+ else{f.className="message bad";f.textContent=`The correct category is ${current.category}.`;setTimeout(()=>showSummary(false),2000);}
+}
+function showSummary(catCorrect){
+ $("challenge").innerHTML=`
+  <h2>Element Summary</h2>
+  <p class="good"><strong>${current.name}</strong> (${current.symbol})</p>
+  <div class="summary">
+   <div><span>Atomic number</span><b>${current.number}</b></div>
+   <div><span>Category</span><b>${current.category}</b></div>
+   <div><span>Atomic mass</span><b>${current.mass}</b></div>
+   <div><span>Phase at room temperature</span><b>${current.phase}</b></div>
+   <div><span>Group</span><b>${current.group ?? "f-block / not assigned"}</b></div>
+   <div><span>Period</span><b>${current.period}</b></div>
+  </div>
+  <p>${catCorrect?"🌟 Another congratulations: your category knowledge is on point!":"Keep exploring the periodic table — you'll get the next one!"}</p>
+  <div class="actions">
+    <button class="primary" id="anotherBtn">Another Element</button>
+    <button class="secondary" id="exitBtn">Exit Game</button>
+  </div>`;
+ $("anotherBtn").onclick=newRound;
+ $("exitBtn").onclick=exitGame;
+}
+function exitGame(){
+ clearInterval(timerId);$("gameScreen").classList.add("hidden");$("startScreen").classList.remove("hidden");
+ $("startBtn").textContent=`Play Again (Final score: ${score})`;
+}
+function formatSeconds(s){return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;}
+document.addEventListener("keydown",e=>{
+ if($("gameScreen").classList.contains("hidden")||solved)return;
+ const k=e.key.toUpperCase();if(/^[A-Z]$/.test(k))guess(k);
+});
+</script>
+</body>
+</html>
+
